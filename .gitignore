@@ -1,0 +1,4 @@
+.env
+tiktok_data.db
+__pycache__
+.venv
