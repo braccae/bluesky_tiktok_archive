@@ -1,4 +1,4 @@
-atproto
 python-dotenv
-opencv-python
-# SQLite is used from the standard library
+ffmpeg-python
+beautifulsoup4
+psycopg2-binary

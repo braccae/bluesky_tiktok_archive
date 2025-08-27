@@ -1,0 +1,10 @@
+[Unit]
+Description=Timer for my script with fuzz
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=666
+Persistent=true
+
+[Install]
+WantedBy=timers.target

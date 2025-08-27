@@ -1,0 +1,8 @@
+[Unit]
+Description=Upload a video from the archive to bluesky
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/.local/bin/bluesky_tiktok_archive
+ExecStart=%h/.local/bin/bluesky_tiktok_archive/.venv/bin/python upload_to_bluesky.py
+Restart=on-failure

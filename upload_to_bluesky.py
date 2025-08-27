@@ -1,6 +1,6 @@
 from atproto import Client, client_utils
 import os
-
+import sqlite3
 from atproto_client.models.app.bsky.embed.defs import AspectRatio
 import db_models
 from dotenv import load_dotenv
@@ -18,10 +18,20 @@ def main():
         print("No unuploaded videos found.")
         exit(0)
 
-    video_path, video_length = db_models.get_video_file_path(os.getenv('TIKTOK_DIR'), video_db['id'], True)
-    if not video_path:
-        print("Video file not found.")
-        exit(0)
+    if not video_db['filepath']:
+        print(f"Video {video_db['id']} has no file path in the database.")
+        print('Marking Video as uploaded so I dont keepy trying to upload it TODO add aditional field for broken links')
+        db_models.mark_video_uploaded(video_db['id'])
+        exit(1)
+
+    tiktok_dir = os.getenv('TIKTOK_DIR')
+    video_path = os.path.join(tiktok_dir, video_db['filepath'])
+
+    if not os.path.exists(video_path):
+        print(f"Video file not found at path: {video_path}")
+        print('Marking Video as uploaded so I dont keepy trying to upload it TODO add aditional field for broken links')
+        db_models.mark_video_uploaded(video_db['id'])
+        exit(1)
     ## parse description of video from database, spearate hashtags from text save tags as a list and text as a string
     import re
     raw_description = video_db['description']
@@ -33,7 +43,7 @@ def main():
     description = re.sub(r'\s+', ' ', description).strip()
 
     # Get author information from the database
-    author = db_models.get_author(video_db['authorId'])
+    author = db_models.get_author(video_db['authorid'])
     if author:
         # Remove brackets/quotes if these are lists or strings with brackets
         def clean(val):
@@ -43,7 +53,7 @@ def main():
                 val = ', '.join(str(v) for v in val)
             return val
         author_nickname = clean(author['nicknames'])
-        author_handle = clean(author['uniqueIds'])
+        author_handle = clean(author['uniqueids'])
         creator_info = f"Author: {author_nickname} Handle: {author_handle}\n\n"
     else:
         creator_info = ""
