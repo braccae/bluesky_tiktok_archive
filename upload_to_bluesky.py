@@ -59,6 +59,20 @@ def main():
         creator_info = ""
 
 
+    # Calculate the character count of the creator info and hashtags
+    hashtags_text = ' '.join([f"#{tag}" for tag in tags])
+    non_description_length = len(creator_info) + len(hashtags_text) + len(tags) # Add len(tags) for spaces between hashtags
+
+    # Define the character limit
+    char_limit = 300
+
+    # Calculate the remaining characters for the description
+    remaining_chars = char_limit - non_description_length
+
+    # Truncate the description if it's too long
+    if len(description) > remaining_chars:
+        description = description[:remaining_chars]
+
     text_builder = client_utils.TextBuilder()
     # Build the post text with description and hashtags using facets
     # Add creator info at the beginning, then description
