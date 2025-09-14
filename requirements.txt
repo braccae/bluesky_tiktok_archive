@@ -2,4 +2,5 @@ python-dotenv
 ffmpeg-python
 beautifulsoup4
 psycopg2-binary
+atproto
 litellm
