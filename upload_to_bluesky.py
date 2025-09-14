@@ -1,6 +1,6 @@
 from atproto import Client, client_utils
 import os
-import sqlite3
+
 from atproto_client.models.app.bsky.embed.defs import AspectRatio
 import db_models
 from dotenv import load_dotenv
@@ -11,30 +11,53 @@ def main():
     client = Client()
     profile = client.login(os.getenv('BLUESKY_USERNAME'), os.getenv('BLUESKY_PASSWORD'))
     print('Welcome,', profile.display_name)
-    
+
 
     video_db = db_models.get_next_unuploaded_video(os.getenv('SOURCE_TYPE'), os.getenv('AUTHOR_ID'))
     if not video_db:
         print("No unuploaded videos found.")
         exit(0)
 
-    if not video_db['filepath']:
-        print(f"Video {video_db['id']} has no file path in the database.")
+    # Debug: Print the database row structure (commented out for production)
+    # print(f"Database row type: {type(video_db)}")
+    # print(f"Database row length: {len(video_db)}")
+    # print(f"Database row contents: {video_db}")
+
+    # Get file path from database and ensure it's a string
+    file_path = video_db[11]  # filepath is at index 11 based on database schema
+    if file_path is None:
+        print(f"Video {video_db[0]} has no file path in the database.")
         print('Marking Video as uploaded so I dont keepy trying to upload it TODO add aditional field for broken links')
-        db_models.mark_video_uploaded(video_db['id'])
+        db_models.mark_video_uploaded(video_db[0])
         exit(1)
 
     tiktok_dir = os.getenv('TIKTOK_DIR')
-    video_path = os.path.join(tiktok_dir, video_db['filepath'])
+    if not tiktok_dir:
+        print("TIKTOK_DIR environment variable not set")
+        exit(1)
+    # Get file path from database and ensure it's a string
+    file_path = video_db[11]  # filepath is at index 11 based on database schema
+    if file_path is None:
+        print(f"Video {video_db[0]} has no file path in the database.")
+        print('Marking Video as uploaded so I dont keepy trying to upload it TODO add aditional field for broken links')
+        db_models.mark_video_uploaded(video_db[0])
+        exit(1)
+
+    # Convert to string if it's not already
+    if not isinstance(file_path, str):
+        file_path = str(file_path)
+
+    video_path = os.path.join(tiktok_dir, file_path)
+    # print(f"Constructed video path: {video_path}")
 
     if not os.path.exists(video_path):
         print(f"Video file not found at path: {video_path}")
         print('Marking Video as uploaded so I dont keepy trying to upload it TODO add aditional field for broken links')
-        db_models.mark_video_uploaded(video_db['id'])
+        db_models.mark_video_uploaded(video_db[0])
         exit(1)
     ## parse description of video from database, spearate hashtags from text save tags as a list and text as a string
     import re
-    raw_description = video_db['description']
+    raw_description = video_db[7]  # description is at index 7
     # Extract tags: all words starting with #
     tags = re.findall(r'#(\w+)', raw_description)
     # Remove all hashtags (words starting with #) from the description
@@ -43,7 +66,7 @@ def main():
     description = re.sub(r'\s+', ' ', description).strip()
 
     # Get author information from the database
-    author = db_models.get_author(video_db['authorid'])
+    author = db_models.get_author(video_db[1])  # authorid is at index 1
     if author:
         # Remove brackets/quotes if these are lists or strings with brackets
         def clean(val):
@@ -52,8 +75,8 @@ def main():
             if isinstance(val, list):
                 val = ', '.join(str(v) for v in val)
             return val
-        author_nickname = clean(author['nicknames'])
-        author_handle = clean(author['uniqueids'])
+        author_nickname = clean(author[2])  # nicknames is at index 2
+        author_handle = clean(author[1])  # uniqueids is at index 1
         creator_info = f"Author: {author_nickname} Handle: {author_handle}\n\n"
     else:
         creator_info = ""
@@ -89,7 +112,7 @@ def main():
     # For debugging
     print(f"Path: {video_path}")
     print(f"Tags: {tags}")
-    print(f"Author: {author['nicknames'] if author else 'Unknown'}")
+    print(f"Author: {author[2] if author else 'Unknown'}")
     print(f"Description: {description}")
     print(f"Built text: {text_builder.build_text()}")
     print(f"Built text: {text_builder.build_text()}")
@@ -126,7 +149,7 @@ def main():
     )
     print(post)
     #client.like(post.uri, post.cid)
-    db_models.mark_video_uploaded(video_db['id'])
+    db_models.mark_video_uploaded(video_db[0])
 
 
 if __name__ == '__main__':
