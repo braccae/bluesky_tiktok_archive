@@ -81,13 +81,50 @@ def main():
     else:
         creator_info = ""
 
+    # Define the character limit
+    char_limit = 300
+
+    # Add default hashtags if none exist or if there's extra character space
+    default_hashtags = ['meme', 'tiktok', 'archive']
+
+
+
+    # Check if we should add default hashtags
+    should_add_defaults = False
+    if not tags:
+        # Add defaults if no hashtags exist
+        should_add_defaults = True
+        print("No hashtags found, adding default hashtags")
+    else:
+        # Check if we have extra character space for defaults
+        current_hashtags_text = ' '.join([f"#{tag}" for tag in tags])
+        defaults_text = ' '.join([f"#{tag}" for tag in default_hashtags])
+        potential_total_length = len(creator_info) + len(description) + len(current_hashtags_text) + len(defaults_text) + len(tags) + len(default_hashtags)
+        current_total_length = len(creator_info) + len(description) + len(current_hashtags_text) + len(tags)
+
+
+
+        if potential_total_length <= char_limit:
+            should_add_defaults = True
+
+
+    if should_add_defaults:
+        original_tags = tags.copy()
+        tags.extend(default_hashtags)
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_tags = []
+        for tag in tags:
+            if tag not in seen:
+                seen.add(tag)
+                unique_tags.append(tag)
+        tags = unique_tags
+
+
 
     # Calculate the character count of the creator info and hashtags
     hashtags_text = ' '.join([f"#{tag}" for tag in tags])
     non_description_length = len(creator_info) + len(hashtags_text) + len(tags) # Add len(tags) for spaces between hashtags
-
-    # Define the character limit
-    char_limit = 300
 
     # Calculate the remaining characters for the description
     remaining_chars = char_limit - non_description_length
