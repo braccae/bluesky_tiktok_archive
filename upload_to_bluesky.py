@@ -14,6 +14,10 @@ def get_llm_processed_tags(description, tags):
     """
     Sends the description and tags to an LLM to get a refined list of non-redundant tags.
     """
+    if not description and not tags:
+        print("No description or tags to process. Skipping LLM.")
+        return []
+
     # Get LLM configuration from environment variables
     model = os.getenv('LLM_MODEL')
     api_key = os.getenv('LLM_API_KEY')
@@ -40,22 +44,34 @@ def get_llm_processed_tags(description, tags):
     Refined Hashtags:
     """
 
+    # Prepend 'openrouter/' to the model name for litellm if it's not already there
+    if not model.startswith('openrouter/'):
+        litellm_model_name = f"openrouter/{model}"
+    else:
+        litellm_model_name = model
+
     try:
         response = litellm.completion(
-            model=model,
+            model=litellm_model_name,
             messages=[{"role": "user", "content": prompt}],
             api_key=api_key,
             base_url=api_base,
         )
         
-        # Extract the comma-separated tags from the response
         refined_tags_str = response.choices[0].message.content.strip()
+        raw_tags = [tag.strip() for tag in refined_tags_str.split(',') if tag.strip()]
+
+        # Filter for valid tags
+        validated_tags = []
+        for tag in raw_tags:
+            # Bluesky tags can't contain spaces, newlines, and must be <= 64 chars.
+            if ' ' not in tag and '\n' not in tag and 0 < len(tag) <= 64:
+                validated_tags.append(tag)
+            else:
+                print(f"Skipping invalid tag from LLM: '{tag}'")
         
-        # Split the string into a list of tags
-        refined_tags = [tag.strip() for tag in refined_tags_str.split(',') if tag.strip()]
-        
-        print(f"LLM refined tags: {refined_tags}")
-        return refined_tags
+        print(f"LLM refined tags: {validated_tags}")
+        return validated_tags
 
     except Exception as e:
         print(f"An error occurred during LLM processing: {e}")
