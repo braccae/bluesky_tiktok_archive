@@ -124,7 +124,20 @@ def main():
 
     # Calculate the character count of the creator info and hashtags
     hashtags_text = ' '.join([f"#{tag}" for tag in tags])
-    non_description_length = len(creator_info) + len(hashtags_text) + len(tags) # Add len(tags) for spaces between hashtags
+    non_description_length = len(creator_info) + len(hashtags_text) + len(tags)  # Add len(tags) for spaces between hashtags
+
+    # Truncate tags if they (plus creator_info) are already too long
+    while non_description_length > char_limit and tags:
+        # Prioritize removing tags starting with 'fyp'
+        fyp_tag_to_remove = next((tag for tag in tags if tag.lower().startswith('fyp')), None)
+        
+        if fyp_tag_to_remove:
+            tags.remove(fyp_tag_to_remove)
+        else:
+            tags.pop()  # if no 'fyp' tags are left, remove from the end
+
+        hashtags_text = ' '.join([f"#{tag}" for tag in tags])
+        non_description_length = len(creator_info) + len(hashtags_text) + len(tags)
 
     # Calculate the remaining characters for the description
     remaining_chars = char_limit - non_description_length
@@ -151,7 +164,6 @@ def main():
     print(f"Tags: {tags}")
     print(f"Author: {author[2] if author else 'Unknown'}")
     print(f"Description: {description}")
-    print(f"Built text: {text_builder.build_text()}")
     print(f"Built text: {text_builder.build_text()}")
 
     import cv2
