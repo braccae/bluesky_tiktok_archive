@@ -2,3 +2,4 @@
 tiktok_data.db
 __pycache__
 .venv
+.db_models.py.kate-swp
